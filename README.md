@@ -1,0 +1,1 @@
+Esta aplicación es resultado de un proceso de aprendizaje del autor en la elaboración de este tipo de herramientas educativos. No tiene el rigor necesario para su uso didáctico, sigue en desarrollo. Un saludo.
