@@ -1,0 +1,1318 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  BookOpen, Search, Plus, Dices, Play, Pause, Download, Highlighter,
+  GraduationCap, Menu, X, ShieldCheck, Sparkles, ChevronLeft, ChevronRight,
+  Music, CheckCircle, AlertCircle, Upload, RotateCcw, FileText, Layers, RefreshCw
+} from 'lucide-react';
+
+// ==========================================
+// 1. REPRODUCTOR AUDIO & MUSICA AMBIENTAL
+// ==========================================
+const TRACKS = [
+  { id: 1, title: "Lofi Focus Philosophy", url: "https://assets.mixkit.co/music/preview/mixkit-study-session-608.mp3" },
+  { id: 2, title: "Classical Deep Concentration", url: "https://assets.mixkit.co/music/preview/mixkit-meditation-piano-461.mp3" },
+  { id: 3, title: "Ambient Thought Drift", url: "https://assets.mixkit.co/music/preview/mixkit-relaxing-in-nature-522.mp3" }
+];
+
+// ==========================================
+// 2. ENLACES GOOGLE DOCS Y FALLBACKS DE TEMARIO (4 AUTORES)
+// ==========================================
+const GOOGLE_DOCS_IDS = {
+  platon: "1m-qkNlev3ueEYjNOye-y7deuVH5JMT_M",
+  descartes: "1HeKKlaQoelqyUkPX7Jy9H3kASboyB-Zh",
+  nietzsche: "1qVcthCVY2FvXxF5d5JEcLUwkBR_zR1Ao",
+  ortega: "1DNhrDz_0UUf3vzge-cuKmtZcuAMV7m3J"
+};
+
+const TEMARIO_FALLBACKS = {
+  platon: `
+    <h1 class="text-3xl font-serif font-bold text-amber-700 mb-4">TEMA 1. LA FILOSOFÍA PLATÓNICA (427-347 a. C.)</h1>
+    <p class="mb-4">El proyecto filosófico de Platón nace marcado por la crisis política e intelectual de Atenas tras la Guerra del Peloponeso y la ejecución condenable de su maestro Sócrates. Su objetivo central es diseñar un Estado ideal justo gobernado por el conocimiento objetivo del Bien.</p>
+    <h2 class="text-xl font-bold text-slate-800 mt-6 mb-2">1. Dualismo Ontológico y Epistemológico</h2>
+    <p class="mb-4">Platón escinde la realidad en dos ámbitos inconmensurables: el <b>Mundo Sensible</b> (corpóreo, sujeto al devenir y al engaño de los sentidos) y el <b>Mundo Inteligible</b> (inmaterial, inmutable, eterno y perfecto), habitado por las <i>Ideas (Eide)</i>, cuya cúspide es la Idea del Bien.</p>
+    <p class="mb-4">A esta dualidad ontológica le corresponde un dualismo gnoseológico explicitado en el <i>Símil de la Línea</i>: la <b>Doxa</b> (opinión basada en la percepción sensible, dividida en Eikasia y Pistis) frente a la <b>Episteme</b> (ciencia racional, dividida en Dianoia y Noesis intuición inteligible pura).</p>
+    <h2 class="text-xl font-bold text-slate-800 mt-6 mb-2">2. Antropología y Psicología Platónica</h2>
+    <p class="mb-4">El ser humano es una unión accidental entre un cuerpo mortal (cárcel del alma) y un alma inmortal preexistente. Platón expone en la <i>República</i> la estructura tripartita del alma: <b>Racional</b> (gobernada por la prudencia/phronesis), <b>Irascible</b> (gobernada por el valor/andreia) y <b>Concupiscible</b> (gobernada por la templanza/sophrosyne).</p>
+    <h2 class="text-xl font-bold text-slate-800 mt-6 mb-2">TEXTO NORMATIVO PEVAU: LA REPÚBLICA (LIBRO VII)</h2>
+    <blockquote class="border-l-4 border-amber-500 pl-4 italic bg-amber-50/50 p-4 rounded-r-lg my-4">
+      "- Examina ya -dijo él- si esto es de este modo. Decimos que existe algo igual. No me refiero a un madero igual a otro madero ni a una piedra igual a otra piedra, sino a algo distinto que está al margen de todos ellos: lo igual en sí mismo. ¿Decimos que eso es algo, o nada?..."
+    </blockquote>
+  `,
+  descartes: `
+    <h1 class="text-3xl font-serif font-bold text-amber-700 mb-4">TEMA 2. EL RACIONALISMO CARTESIANO (1596-1650)</h1>
+    <p class="mb-4">René Descartes inaugura la Modernidad filosófica buscando un fundamento inquebrantable para las ciencias. Ante la ruina de la escolástica medieval y el escepticismo emergente, propone un método matemático universal fundamentado en la autonomía intrínseca de la Razón.</p>
+    <h2 class="text-xl font-bold text-slate-800 mt-6 mb-2">1. La Duda Metódica y el Cogito</h2>
+    <p class="mb-4">Para alcanzar una certeza absoluta, Descartes convierte la duda en herramienta metódica: duda de los sentidos, de la distinción entre vigilia y sueño, e incluso de las verdades matemáticas mediante la hipótesis del <b>Genio Maligno</b>. Esta duda radical choca contra un límite infranqueable: la existencia del propio sujeto que duda y piensa (<i>Cogito, ergo sum</i>).</p>
+    <h2 class="text-xl font-bold text-slate-800 mt-6 mb-2">2. La Teoría de las Tres Sustancias</h2>
+    <p class="mb-4">Descartes demuestra deductivamente la existencia de tres ámbitos ontológicos: la <b>Res Cogitans</b> (sustancia pensante finita), la <b>Res Infinita</b> (Dios, cuya existencia demuestra mediante el argumento ontológico y causal ideológico) y la <b>Res Extensa</b> (el mundo material mecanicista caracterizado por la extensión geométrica).</p>
+    <h2 class="text-xl font-bold text-slate-800 mt-6 mb-2">TEXTO NORMATIVO PEVAU: DISCURSO DEL MÉTODO (PARTE IV)</h2>
+    <blockquote class="border-l-4 border-amber-500 pl-4 italic bg-amber-50/50 p-4 rounded-r-lg my-4">
+      "Pero inmediatamente después advertí que, mientras quería pensar de ese modo que todo es falso, era absolutamente necesario que yo, que lo pensaba, fuera alguna cosa; y observando que esta verdad: 'Pienso, luego soy' era tan firme y segura que las más extravagantes suposiciones de los escépticos no eran capaces de conmoverla..."
+    </blockquote>
+  `,
+  nietzsche: `
+    <h1 class="text-3xl font-serif font-bold text-amber-700 mb-4">TEMA 3. FRIEDRICH NIETZSCHE Y LA CRÍTICA A LA TRADICIÓN (1844-1900)</h1>
+    <p class="mb-4">Nietzsche representa la ruptura radical con el pensamiento metafísico occidental. Su filosofía es un diagnóstico demoledor de la decadencia cultural europea, fundamentada en la negación de la vida mediante conceptos platónicos y judeocristianos.</p>
+    <h2 class="text-xl font-bold text-slate-800 mt-6 mb-2">1. Deconstrucción de la Metafísica y la Muerte de Dios</h2>
+    <p class="mb-4">Nietzsche denuncia que Sócrates y Platón inventaron un "mundo verdadero" tras la trastienda sensible para consolar la debilidad humana. La <b>Muerte de Dios</b> simboliza el colapso de todos los absolutos y certezas trascendentes, abriendo paso al nihilismo.</p>
+    <h2 class="text-xl font-bold text-slate-800 mt-6 mb-2">2. El Superhombre, la Voluntad de Poder y el Eterno Retorno</h2>
+    <p class="mb-4">Frente al nihilismo pasivo, el <b>Superhombre (Übermensch)</b> asume el nihilismo activo, crea sus propios valores vitales libres del resentimiento, encarna la <b>Voluntad de Poder</b> como afirmación dionisíaca de la vida y abraza el <b>Eterno Retorno</b> como piedra de toque ética suprema (Amor Fati).</p>
+    <h2 class="text-xl font-bold text-slate-800 mt-6 mb-2">TEXTO NORMATIVO PEVAU: EL CREPÚSCULO DE LOS ÍDOLOS</h2>
+    <blockquote class="border-l-4 border-amber-500 pl-4 italic bg-amber-50/50 p-4 rounded-r-lg my-4">
+      "¿Cómo el 'mundo verdadero' acabó convirtiéndose en una fábula? Historia de un error. 1. El mundo verdadero, alcanzable para el sabio, el piadoso, el virtuoso, - vive en él, es él. (La forma más antigua de la Idea, relativamente inteligente, simple, convincente... Transcripción de la tesis 'Yo, Platón, soy la verdad')."
+    </blockquote>
+  `,
+  ortega: `
+    <h1 class="text-3xl font-serif font-bold text-amber-700 mb-4">TEMA 4. JOSÉ ORTEGA Y GASSET Y EL RACIOVITALISMO (1883-1955)</h1>
+    <p class="mb-4">Ortega y Gasset articula la respuesta española a la crisis del racionalismo abstracto y del empirismo mecanicista mediante el <b>Raciovitalismo</b>, sintetizado en su celebre aforismo: <i>"Yo soy yo y mi circunstancia, y si no la salvo a ella no me salvo yo"</i>.</p>
+    <h2 class="text-xl font-bold text-slate-800 mt-6 mb-2">1. La Razón Vital y el Perspectivismo</h2>
+    <p class="mb-4">La razón no es una entidad pura exterior al tiempo, sino un instrumento intrínseco de la vida (Razón Vital y Histórica). Frente al sustancialismo, la verdad no es única ni abstracta: es la articulación orgánica de las múltiples perspectivas individuales sobre la realidad (<b>Perspectivismo</b>).</p>
+    <h2 class="text-xl font-bold text-slate-800 mt-6 mb-2">2. Ideas y Creencias / El Tema de Nuestro Tiempo</h2>
+    <p class="mb-4">Ortega distingue entre las <b>Ideas</b> (pensamientos explícitos que construimos para responder a dudas) y las <b>Creencias</b> (el suelo firme en el que vivimos sin cuestionarlo). La tarea histórica contemporánea consiste en subordinar la cultura abstracta a la vida viva.</p>
+    <h2 class="text-xl font-bold text-slate-800 mt-6 mb-2">TEXTO NORMATIVO PEVAU: EL TEMA DE NUESTRO TIEMPO</h2>
+    <blockquote class="border-l-4 border-amber-500 pl-4 italic bg-amber-50/50 p-4 rounded-r-lg my-4">
+      "La razón pura tiene que ser sustituida por una razón vital, donde la vida misma sea el principio y la medida del pensar. El sujeto cognoscente no es un ojo abstracto sin perspectiva, sino un individuo concreto encajado en una circunstancia histórica determinada."
+    </blockquote>
+  `
+};
+
+// ==========================================
+// 3. GLOSARIO NORMATIVO (100 CONCEPTOS - 25 POR AUTOR)
+// ==========================================
+const GLOSARIO_COMPLETO = {
+  platon: [
+    { term: "Idea (Eidos)", def: "Entidad inmaterial, inmutable, universal y eterna que reside en el Mundo Inteligible y constituye la auténtica esencia y realidad de las cosas sensibles." },
+    { term: "Doxa (Opinión)", def: "Grado inferior de conocimiento que tiene por objeto las cosas del Mundo Sensible, cambiantes y caducas. Se divide en Eikasia (conjetura) y Pistis (creencia)." },
+    { term: "Episteme (Ciencia)", def: "Conocimiento objetivo, verdadero y universal del Mundo Inteligible alcanzado mediante la razón. Se divide en Dianoia (razón discursiva) y Noesis (intuición racional)." },
+    { term: "Anámnesis (Reminiscencia)", def: "Teoría que sostiene que aprender es recordar. El alma contempló las Ideas en su existencia preterrena y, al encarnarse en el cuerpo sensible, las olvida hasta ser estimulada por los sentidos." },
+    { term: "Dialéctica", def: "Método filosófico supremo de ascenso gradual desde el mundo sensible hasta la contemplación directa de las Ideas y la Idea del Bien, así como el descenso para gobernar el Estado." },
+    { term: "Mundo Sensible", def: "Ámbito material, visible, corruptible y en permanente devenir creado por el Demiurgo a imitación del modelo inteligible. Es el reino de la apariencia y de la Doxa." },
+    { term: "Mundo Inteligible", def: "Ámbito inmaterial, trascendente, inmóvil y perfecto habitado por las Ideas eternas. Constituye el verdadero Ser y es el objeto propio de la Episteme." },
+    { term: "Demiurgo", def: "Inteligencia ordenadora divina que moldea la materia caótica originaria tomando como modelo eterno e inmutable las Ideas del Mundo Inteligible." },
+    { term: "Idea del Bien", def: "Cúspide de la jerarquía del Mundo Inteligible. Principio ontológico de realidad de todas las Ideas y principio epistemológico que ilumina la verdad (comparado con el Sol)." },
+    { term: "Alma Tripartita", def: "Concepción estructural de la psique humana dividida en tres partes con distintas funciones y virtudes: Racional (cerebro), Irascible (pecho) y Concupiscible (vientre)." },
+    { term: "Alma Racional (Nous)", def: "Parte inmortal y divina del alma, situada en la cabeza. Le corresponde la virtud de la Prudencia (Phronesis) y debe dirigir a las otras dos partes." },
+    { term: "Alma Irascible (Thymos)", def: "Parte del alma asociada a las pasiones nobles, el valor y la voluntad, situada en el tórax. Le corresponde la virtud de la Fortaleza o Valor (Andreia)." },
+    { term: "Alma Concupiscible (Epithymia)", def: "Parte del alma ligada a los deseos primarios y apetitos corporales, situada en el abdomen. Le corresponde la virtud de la Templanza (Sophrosyne)." },
+    { term: "Rey Filósofo (Sofocracia)", def: "Propuesta política platónica donde la gobernanza de la Polis debe recaer en quienes han alcanzado el conocimiento directo del Bien mediante la Dialéctica." },
+    { term: "Justicia (Dikaiosyne)", def: "Harmonía perfecta que surge tanto en el individuo como en el Estado cuando cada una de sus tres partes cumple estrictamente la función y virtud que le es propia." },
+    { term: "Catharsis (Purificación)", def: "Proceso ético y reflexivo mediante el cual el alma se desliga de los apetitos y engaños corporales para prepararse a retornar al reino inteligible." },
+    { term: "Mimesis / Metaxis", def: "Relación ontológica donde las cosas sensibles 'imitan' o 'participan' imperfectamente de las Ideas eternas de las cuales son copias degradadas." },
+    { term: "Símil de la Línea", def: "Alegoría geométrica del Libro VI de la República que representa los cuatro niveles ontológicos de la realidad y sus correspondientes grados de conocimiento." },
+    { term: "Mito de la Caverna", def: "Alegoría del Libro VII de la República que ilustra la condición humana encadenada a las sombras de la ilusión y el penoso ascenso liberador hacia la luz de la Verdad." },
+    { term: "Noesis", def: "Grado supremo de conocimiento inteligible que aprehende directamente los primeros principios (las Ideas) sin apoyarse en imágenes ni hipótesis sensibles." },
+    { term: "Dianoia", def: "Conocimiento discursivo e hipotético característico de las matemáticas, que desciende desde premisas abstractas utilizando aún representaciones o esquemas visibles." },
+    { term: "Pistis", def: "Creencia o convicción sensible sobre los objetos materiales verdaderos de la naturaleza y del arte. Constituye la fase superior de la Doxa." },
+    { term: "Eikasia", def: "Conjetura o imaginación. Nivel más bajo de conocimiento centrado en las sombras, reflejos e imágenes engañosas del mundo visible." },
+    { term: "Dualismo Antropológico", def: "Doctrina que concibe al hombre como compuesto accidental de dos realidades heterogéneas: un alma inmortal y espiritual y un cuerpo mortal y material." },
+    { term: "Metempsicosis", def: "Reencarnación o transmigración del alma tras la muerte física a nuevos cuerpos sensibles en función del grado de purificación o degradación alcanzado." }
+  ],
+  descartes: [
+    { term: "Cogito, ergo sum", def: "Primera verdad indudable e inquebrantable de la filosofía cartesiana alcanzada por intuición racional pura durante el proceso de duda metódica." },
+    { term: "Duda Metódica", def: "Herramienta epistemológica radical, voluntaria y provisional empleada para suspender todo juicio previo y descubrir una certeza indudable sobre la que edificar la ciencia." },
+    { term: "Genio Maligno", def: "Hipótesis hiperbólica de la duda cartesiana que supone la existencia de un ser todopoderoso y engañador dedicado a inducirnos a error continuo, incluso en las verdades matemáticas." },
+    { term: "Res Cogitans", def: "Sustancia pensante finita cuyo único atributo esencial es el pensamiento (dudar, entender, afirmar, negar, querer, imaginar) y que no requiere del cuerpo para existir." },
+    { term: "Res Extensa", def: "Sustancia corpórea o material cuyo atributo fundamental es la extensión geométrica en longitud, anchura y profundidad, gobernada por leyes mecanicistas." },
+    { term: "Res Infinita", def: "Sustancia divina, infinita, eterna, omnisciente y soberanamente perfecta que actúa como garantía ontológica de la verdad del conocimiento claro y distinto." },
+    { term: "Ideas Innatas", def: "Contenidos mentales nacidos con la propia razón que no proceden de la experiencia sensible ni de la imaginación (ej. la idea de Dios, de Cogito, de sustancia)." },
+    { term: "Ideas Adventicias", def: "Contenidos mentales que parecen provenir de la experiencia sensible externa mediante los sentidos (ej. la idea de árbol, sol o ruido)." },
+    { term: "Ideas Facticias", def: "Contenidos mentales construidos por la propia mente al combinar voluntariamente fragmentos de otras ideas (ej. la idea de sirena o centauro)." },
+    { term: "Evidencia", def: "Primera regla del método cartesiano: no admitir como verdadera cosa alguna que no sea conocida con absoluta 'claridad y distinción' imposibilitando la duda." },
+    { term: "Análisis", def: "Segunda regla del método cartesiano: descomponer cada una de las dificultades complejas en sus partes simples constitutivas para resolverlas con mayor facilidad." },
+    { term: "Síntesis", def: "Tercera regla del método cartesiano: conducir con orden los pensamientos ascendiendo desde los objetos más simples e intuitivos hasta los conocimientos más complejos." },
+    { term: "Enumeración", def: "Cuarta regla del método cartesiano: realizar revisiones y recuentos tan completos e integrales que se tenga la seguridad absoluta de no haber omitido nada." },
+    { term: "Solipsismo", def: "Estado filosófico provisional en el que el sujeto solo puede asegurar la existencia de su propia mente pensante (Cogito) antes de demostrar la existencia de Dios y del mundo." },
+    { term: "Dualismo Cartesiano", def: "División sustancial irreductible entre el alma (Res Cogitans) y el cuerpo (Res Extensa), planteando el problema de su interacción física en el ser humano." },
+    { term: "Glándula Pineal", def: "Estructura cerebral señalada por Descartes como el punto físico de contacto donde interactúan el alma inmaterial y los 'espíritus animales' del cuerpo material." },
+    { term: "Mecanicismo", def: "Concepción de la naturaleza física como una gran máquina cuyos fenómenos se explican exclusivamente por la materia en movimiento y sus leyes deterministas." },
+    { term: "Moral Provisional", def: "Conjunto de cuatro máximas pragmáticas diseñadas por Descartes para guiar la conducta cotidiana mientras mantiene en duda sus certezas intelectuales." },
+    { term: "Intuición Racional", def: "Luz natural de la mente que permite aprehender de forma inmediata, clara e inconfundible los conceptos simples sin posibilidad de error." },
+    { term: "Deducción", def: "Operación mental lógica mediante la cual se derivan necesariamente nuevas certezas a partir de premisas indudables previamente intuidas." },
+    { term: "Argumento Ontológico", def: "Prueba cartesiana de Dios derivada de San Anselmo: la idea de un Ser Soberanamente Perfecto exige su existencia real, pues la no existencia implicaría una imperfección." },
+    { term: "Causalidad Ideológica", def: "Prueba de la existencia de Dios: la causa de la idea de un Ser Infinito presente en una mente finita debe ser una realidad verdaderamente infinita (Dios)." },
+    { term: "Cualidades Primarias", def: "Propiedades objetivas de los cuerpos medibles matemáticamente como la extensión, la figura o el movimiento, que existen realmente en la Res Extensa." },
+    { term: "Cualidades Secundarias", def: "Percepciones subjetivas del sujeto como el color, el sabor, la temperatura o el olor, que no corresponden a propiedades reales del objeto." },
+    { term: "Claridad y Distinción", def: "Criterio de verdad. Claridad es la presencia manifiesta de una idea a una mente atenta; distinción es su separación nula de cualquier otra idea." }
+  ],
+  nietzsche: [
+    { term: "Muerte de Dios", def: "Acontecimiento histórico e intelectual que simboliza el colapso de los valores absolutos, metafísicos y teológicos que han dominado Occidente desde Platón." },
+    { term: "Voluntad de Poder", def: "Principio vital cósmico e inmanente. No es mero deseo de dominar a otros, sino el impulso creativo de autoafirmación, superación constante y expansión de la vida." },
+    { term: "Superhombre (Übermensch)", def: "Nuevo tipo humano que supera el nihilismo, rechaza las muletas trascendentes, crea sus propios valores inmanentes y afirma jubilosamente la existencia terrestre." },
+    { term: "Eterno Retorno", def: "Hipótesis existencial y ética suprema: la prueba de amar la vida de tal modo que se desearía repetir cada instante de la existencia infinitas veces exactamente igual." },
+    { term: "Transvaloración de los Valores", def: "Tarea crítica de desmantelar la moral judeocristiana invertida para sustituirla por valores afirmativos de la vida, la fuerza y el cuerpo." },
+    { term: "Nihilismo Pasivo", def: "Decadencia y cansancio de la voluntad tras la Muerte de Dios que se refugia en el vacío, el pesimismo o en falsos ídolos laicos (dinero, Estado, ciencia)." },
+    { term: "Nihilismo Activo", def: "Fuerza destructiva y liberadora que acelera la destrucción de los antiguos valores caducos para abrir el espacio a la creación de nuevas formas de vida." },
+    { term: "Moral de Señores", def: "Moral afirmativa y aristocrática que brota de la fuerza y del orgullo; define lo 'bueno' como lo noble, vital y excelente, y lo 'malo' como lo despreciable." },
+    { term: "Moral de Esclavos", def: "Moral reactiva basada en el resentimiento contra la excelencia; define lo 'bueno' como lo manso, compasivo y servil, y proyecta el mal sobre la fuerza." },
+    { term: "Ressentiment (Resentimiento)", def: "Pasión de los débiles incapaces de actuar que inventan una moral represiva para vengarse espiritualmente de los fuertes y paralizar su vitalidad." },
+    { term: "Lo Apolíneo", def: "Principio artístico de la forma, la medida, el orden, la claridad, la individualidad y la armonía visual, encarnado en las artes plásticas." },
+    { term: "Lo Dionisíaco", def: "Principio artístico del caos, la embriaguez, el desbordamiento vital, la unidad mística y la música; afirmación trágica e incondicional de la vida." },
+    { term: "El Último Hombre", def: "Opuesto al Superhombre: el producto mediocre de la modernidad nihilista que busca la comodidad superficial, la igualdad vulgar y evita cualquier riesgo." },
+    { term: "Las Tres Transformaciones", def: "Alegoría del desarrollo del espíritu: el Camello (carga la tradición), el León (destruye el 'Debes' afirmando el 'Quiero') y el Niño (juego, inocencia y nuevo comienzo)." },
+    { term: "Perspectivismo", def: "Tesis epistemológica que niega la existencia de hechos o verdades neutras en sí mismas; solo existen interpretaciones condicionadas por la Voluntad de Poder." },
+    { term: "Metáfora", def: "Origen verdadero del lenguaje abstracto. Las palabras son fijaciones petrificadas de metáforas olvidadas que la filosofía confunde erróneamente con conceptos reales." },
+    { term: "Crítica a la Metafísica", def: "Denuncia de la mentira socrático-platónica que escinde la realidad inventando un 'mundo verdadero' imaginario para negar este mundo sensible dinámico." },
+    { term: "Dios del Devenir", def: "Simbolismo de Dioniso como deidad de la corriente ininterrumpida de la vida, la destrucción creadora y la aceptación del sufrimiento trágico." },
+    { term: "Ilusión Gramatical", def: "Trampa del lenguaje que nos induce a creer que detrás de toda acción existe un 'sujeto' o 'sustancia' separada (ej. el concepto fetiche del 'Yo')." },
+    { term: "Vitalismo Nietzscheano", def: "Corriente que sitúa la Vida corpórea, orgánica e instintiva como el valor supremo e irrenunciable al que deben subordinarse la razón y la moral." },
+    { term: "La Gran Política", def: "Lucha filosófica y cultural por el destino de la humanidad encaminada a la transvaloración de valores y al advenimiento del Superhombre." },
+    { term: "Instinto de Lucha", def: "Fuerza biológico-espiritual subyacente que mueve a los organismos sanos a medirse con resistencias para incrementar su Voluntad de Poder." },
+    { term: "Inversión Platonista", def: "Giro radical que restituye el valor supremo al Mundo Sensible en cambio constante y degradará las Ideas puras a meros fantasmas conceptuales." },
+    { term: "Genealogía de la Moral", def: "Método histórico-psicológico que rastrea el origen fisiológico y social de las nociones morales para desenmascarar sus motivaciones ocultas." },
+    { term: "Amor Fati", def: "Amor al destino: actitud trágica de aceptar y amar jubilosamente la propia vida con todos sus dolores, sufrimientos y alegrías sin desear cambiar nada." }
+  ],
+  ortega: [
+    { term: "Raciovitalismo", def: "Filosofía orteguiana que supera la antítesis entre el Racionalismo abstracto y el Vitalismo irracional, definiendo la Razón como función intrínseca de la Vida." },
+    { term: "Razón Vital", def: "Única modalidad de razón capaz de aprehender la realidad humana cambiante. No analiza desde fuera, sino que piensa desde y para la existencia concreta." },
+    { term: "Razón Histórica", def: "Dimensión temporal de la Razón Vital: el ser humano no tiene una 'naturaleza' fija e inmutable, sino que su sustancia es su propia historia acumulada." },
+    { term: "Yo y mi Circunstancia", def: "Aforismo básico de la metafísica de Ortega: el Yo indivisible comprende al sujeto y a su entorno físico, social e histórico en permanente interacción recíproca." },
+    { term: "Perspectivismo Orteguiano", def: "Doctrina que afirma que la verdad absoluta es la suma armoniosa de las infinitas perspectivas individuales sobre el universo. Cada vida es un punto de vista insustituible." },
+    { term: "Doctrina del Punto de Vista", def: "Fundamentación epistemológica: la perspectiva no es una deformación del conocimiento, sino la única condición que posibilita captar la realidad." },
+    { term: "Imperativo de la Vida", def: "La vida es el hecho radical primario. Vivir no es una opción teórica, sino la necesidad ineludible de decidir a cada instante lo que vamos a ser." },
+    { term: "Hombre Masa", def: "Sujeto desindividualizado característico de la sociedad contemporánea que se siente 'como todo el mundo', exige derechos sin deberes y rechaza la excelencia." },
+    { term: "Minoría Selecta", def: "Individuos (independientemente de su clase social) que se exigen a sí mismos disciplina, rigor intelectual y servicio a valores superiores." },
+    { term: "Creencias", def: "Ideas colectivas inmanentes con las que contamos implícitamente de forma inconsciente. Constituyen el suelo firme sobre el que caminamos y vivimos." },
+    { term: "Ideas (vs Creencias)", def: "Construcciones intelectuales explícitas (teorías, hipótesis) que inventamos conscientemente cuando las creencias previas fallan o entran en crisis." },
+    { term: "El Tema de Nuestro Tiempo", def: "Título y misión generacional: la tarea del siglo XX de someter la razón pura al servicio de la vida viva y articular el Perspectivismo." },
+    { term: "Vivencia (Erlebnis)", def: "Experiencia directa e inmediata de la realidad antes de ser conceptualizada o procesada por esquemas teóricos rígidos." },
+    { term: "Generación", def: "Unidad histórica fundamental de cambio: compromiso de un grupo de coetáneos que comparten una misma sensibilidad y 'altura de los tiempos'." },
+    { term: "Circunstancialismo", def: "Postura que rechaza el aislamiento del sujeto kantiano o cartesiano, afirmando que el mundo y el Yo se copresentan en simultaneidad radical." },
+    { term: "Proyecto Vital", def: "Diseño dramático e individual de lo que el sujeto aspira a ser. La vida humana es una tarea abierta que se hace a sí misma." },
+    { term: "Utilería Histórica", def: "Conjunto de instrumentos, conceptos y valores heredados del pasado que la vida debe utilizar o renovar para no quedar paralizada." },
+    { term: "Deshumanización del Arte", def: "Diagnóstico del arte vanguardista que elimina las pasiones humanas vulgares para centrarse en la forma pura y en la metáfora estética." },
+    { term: "Salvar las Circunstancias", def: "Misión ética e intelectual: dar un sentido humano y racional al entorno particular en el que a cada individuo le ha tocado vivir." },
+    { term: "Invertebración", def: "Proceso de descomposición social y política resultante de la falta de un proyecto común estimulante y de la desconexión entre las partes del país." },
+    { term: "Devenir Vital", def: "Fluidez ininterrumpida del tiempo biológico e histórico que impide encasillar la existencia en categorías puramente estáticas o geométricas." },
+    { term: "Pensamiento Sistemático", def: "Estructura rigurosa y no caprichosa del raciovitalismo orteguiano donde cada concepto depende orgánicamente de la verdad primaria de la vida." },
+    { term: "Cultura Raciovital", def: "Forma de cultura equilibrada que no cae en el culturalismo abstracto (que olvida la vida) ni en el vitalismo ciego (que olvida la razón)." },
+    { term: "Altura de los Tiempos", def: "Nivel de desarrollo técnico, científico y espiritual alcanzado por una época determinada al cual el individuo debe ponerse al día." },
+    { term: "Verdad Polifónica", def: "Concepción de la Verdad Universal como un coro integrado por la yuxtaposición de todas las perspectivas históricas e individuales de la humanidad." }
+  ]
+};
+
+// ==========================================
+// 4. ATLAS EXPERTO (28 ESQUEMAS - 7 POR AUTOR)
+// ==========================================
+const ATLAS_COMPLETO = {
+  platon: [
+    {
+      id: "p1", title: "1. Dualismo Ontológico y Epistemológico (Símil de la Línea)", type: "tabla_compleja",
+      headers: ["Mundo Ontológico", "Objetos de Realidad", "Nivel Epistemológico", "Facultad del Alma"],
+      rows: [
+        ["Inteligible (Eidos)", "Idea del Bien / Ideas Supremas", "NOESIS (Intuición Racional)", "Razón Pura (Nous)"],
+        ["Inteligible (Matemático)", "Objetos Matemáticos / Geometría", "DIANOIA (Razón Discursiva)", "Entendimiento"],
+        ["Sensible (Cosas)", "Animales, Plantas, Utensilios", "PISTIS (Creencia)", "Sentidos / Percepción"],
+        ["Sensible (Sombras)", "Reflejos, Sombras, Arte Mimético", "EIKASIA (Conjetura)", "Imaginación"]
+      ]
+    },
+    {
+      id: "p2", title: "2. Estructura Tripartita del Alma y Virtudes", type: "tripartito",
+      col1: { title: "Alma Racional (Nous)", items: ["Ubicación: Cabeza", "Naturaleza: Inmortal / Divina", "Virtud: PRUDENCIA (Phronesis)"] },
+      col2: { title: "Alma Irascible (Thymos)", items: ["Ubicación: Tórax / Pecho", "Naturaleza: Mortal / Pasiones nobles", "Virtud: FORTALEZA (Andreia)"] },
+      col3: { title: "Alma Concupiscible (Epithymia)", items: ["Ubicación: Abdomen / Vientre", "Naturaleza: Mortal / Apetitos primarios", "Virtud: TEMPLANZA (Sophrosyne)"] }
+    },
+    {
+      id: "p3", title: "3. El Estado Ideal (Sofocracia de la República)", type: "tripartito",
+      col1: { title: "Gobernantes (Filósofos)", items: ["Alma Predominante: Racional", "Virtud: Prudencia / Sabiduría", "Función: Dirigir la Polis hacia el Bien"] },
+      col2: { title: "Guardianes (Guerreros)", items: ["Alma Predominante: Irascible", "Virtud: Fortaleza / Valor", "Función: Defender la ciudad de los enemigos"] },
+      col3: { title: "Productores (Artesanos)", items: ["Alma Predominante: Concupiscible", "Virtud: Templanza / Moderación", "Función: Proveer recursos materiales"] }
+    },
+    {
+      id: "p4", title: "4. Ascenso Dialéctico (Mito de la Caverna)", type: "proceso_vertical",
+      steps: [
+        "1. Caverna Oscura: Encadenado contemplando sombras reflejadas (Eikasia).",
+        "2. Liberación: Giro del cuello y contemplación de las estatuas y el fuego (Pistis).",
+        "3. Salida Escarpada: Salida al exterior deslumbrado; contemplación de reflejos en agua (Dianoia).",
+        "4. Contemplación Nocturna: Observación de las estrellas y la luna (Ideas complejas).",
+        "5. Contemplación Diurna: Visión directa del Sol (La Idea del Bien / Noesis supreme)."
+      ]
+    },
+    {
+      id: "p5", title: "5. Jerarquía Ontológica del Mundo Inteligible", type: "proceso_vertical",
+      steps: [
+        "CÚSPIDE: Idea del Bien (Causa de realidad y de inteligibilidad)",
+        "NIVEL 2: Ideas Morales y Estéticas (Justicia, Belleza, Verdad)",
+        "NIVEL 3: Ideas de Entidades Matemáticas (Números, Figuras)",
+        "BASE: Ideas de Cosas Sensibles y Naturales (Hombre, Agua, Piedra)"
+      ]
+    },
+    {
+      id: "p6", title: "6. Degeneración de los Regímenes Políticos", type: "proceso_vertical",
+      steps: [
+        "ARISTOCRACIA / SOFOCRACIA (Gobierno de los sabios - Estado Perfecto)",
+        "TIMOCRACIA (Gobierno de los guerreros motivados por el honor militar)",
+        "OLIGARQUÍA (Gobierno de los ricos guiados por la codicia de dinero)",
+        "DEMOCRACIA (Gobierno de la masa libertina sin disciplina ni orden)",
+        "TIRANÍA (Degeneración extrema: un demagogo impone su violencia salvaje)"
+      ]
+    },
+    {
+      id: "p7", title: "7. Paralelismo Psicopolítico (Mito del Carro Alado)", type: "tabla_compleja",
+      headers: ["Elemento del Carro", "Parte del Alma", "Clase Social", "Virtud Exigida"],
+      rows: [
+        ["Auriga (Conductor)", "Racional (Nous)", "Gobernantes", "Prudencia"],
+        ["Caballo Blanco (Noble)", "Irascible (Thymos)", "Guardianes", "Fortaleza"],
+        ["Caballo Negro (Rebelde)", "Concupiscible (Epithymia)", "Productores", "Templanza"],
+        ["Equilibrio del Carro", "Alma Armónica", "Polis Justa", "JUSTICIA"]
+      ]
+    }
+  ],
+  descartes: [
+    {
+      id: "d1", title: "1. Las Tres Sustancias Cartesianas", type: "tabla_compleja",
+      headers: ["Sustancia", "Nombre Técnico", "Atributo Esencial", "Modos / Manifestaciones"],
+      rows: [
+        ["Sustancia Pensante", "Res Cogitans", "El Pensamiento", "Dudar, entender, querer, imaginar"],
+        ["Sustancia Corpórea", "Res Extensa", "La Extensión", "Figura, tamaño, movimiento, posición"],
+        ["Sustancia Divina", "Res Infinita", "La Perfección", "Infinitud, omnipotencia, veracidad"]
+      ]
+    },
+    {
+      id: "d2", title: "2. Las Cuatro Reglas del Método del Discurso", type: "proceso_vertical",
+      steps: [
+        "1. REGLA DE LA EVIDENCIA: No admitir nada como verdadero sin claridad y distinción indudables.",
+        "2. REGLA DEL ANÁLISIS: Dividir cada problema complejo en cuantas partes simples sea necesario.",
+        "3. REGLA DE LA SÍNTESIS: Ordenar los pensamientos desde los objetos más simples a los compuestos.",
+        "4. REGLA DE LA ENUMERACIÓN: Hacer revisiones e inventarios tan completos que descarten cualquier omisión."
+      ]
+    },
+    {
+      id: "d3", title: "3. Proceso de Escalada de la Duda Metódica", type: "proceso_vertical",
+      steps: [
+        "NIVEL 1: Duda de los Sentidos (Engaño puntual de las percepciones distantes).",
+        "NIVEL 2: Duda del Sueño / Vigilia (Imposibilidad de distinguir la realidad objetiva del sueño).",
+        "NIVEL 3: Hipótesis del Genio Maligno (Duda hiperbólica de las verdades matemáticas más evidentes).",
+        "PUNTO DE INFLEXIÓN: 'Cogito, ergo sum' (Certeza absoluta de la existencia del sujeto pensante)."
+      ]
+    },
+    {
+      id: "d4", title: "4. Clasificación Tripartita de las Ideas", type: "tripartito",
+      col1: { title: "Ideas Innatas", items: ["Origen: Nacidas con la razón", "Ejemplos: Cogito, Dios, Infinito", "Propiedad: Claras y distintas"] },
+      col2: { title: "Ideas Adventicias", items: ["Origen: Sentidos externos", "Ejemplos: Sol, casa, caballo", "Propiedad: Oscuras y dudosas"] },
+      col3: { title: "Ideas Facticias", items: ["Origen: Construidas por la mente", "Ejemplos: Sirena, Quimera", "Propiedad: Ficticias / Arbitrarias"] }
+    },
+    {
+      id: "d5", title: "5. Pruebas de la Existencia de Dios", type: "tripartito",
+      col1: { title: "Causalidad de la Idea de Infinito", items: ["La mente finita tiene la idea de Dios", "Una causa finita no produce una idea infinita", "Luego Dios la ha impreso en nosotros"] },
+      col2: { title: "Imfección del Yo Pensante", items: ["Yo sé que soy imperfecto porque dudo", "Si me hubiera creado a mí mismo, me habría hecho perfecto", "Luego he sido creado por Dios"] },
+      col3: { title: "Argumento Ontológico", items: ["Tengo la idea de un Ser Soberanamente Perfecto", "La existencia real es una perfección necesaria", "Luego Dios existe necesariamente"] }
+    },
+    {
+      id: "d6", title: "6. Máximas de la Moral Provisional", type: "proceso_vertical",
+      steps: [
+        "1ª Máxima: Obedecer las leyes, costumbres y religión del país, conservando el juicio moderado.",
+        "2ª Máxima: Ser lo más firme y resuelto posible en las acciones una vez adoptada una decisión.",
+        "3ª Máxima: Vencerse a uno mismo antes que a la fortuna, y cambiar los propios deseos antes que el orden del mundo.",
+        "4ª Máxima: Dedicar la vida entera a cultivar la razón y avanzar en el conocimiento de la verdad."
+      ]
+    },
+    {
+      id: "d7", title: "7. Dualismo Mente-Cuerpo y Mecanicismo", type: "tabla_compleja",
+      headers: ["Ámbito", "Naturaleza", "Leyes que lo Rigen", "Conexión en el Hombre"],
+      rows: [
+        ["Alma (Mente)", "Inmaterial / Libre", "Lógica y Autonomía de la Voluntad", "Glándula Pineal (Cerebro)"],
+        ["Cuerpo (Materia)", "Material / Extensa", "Determinismo Mecánico del Movimiento", "Espíritus Animales (Nervios)"]
+      ]
+    }
+  ],
+  nietzsche: [
+    {
+      id: "n1", title: "1. Dualismo Artístico Trágico (El Nacimiento de la Tragedia)", type: "tabla_compleja",
+      headers: ["Principio", "Dios Griego", "Manifestación Artística", "Estado Psicológico / Ontológico"],
+      rows: [
+        ["Lo Apolíneo", "Apolo (Luz / Forma)", "Artes Plásticas / Escultura", "Sueño, Individualidad, Medida, Claridad"],
+        ["Lo Dionisíaco", "Dioniso (Vino / Caos)", "Música / Danza Trágica", "Embriaguez, Disolución del Yo, Torrente Vital"]
+      ]
+    },
+    {
+      id: "n2", title: "2. Las Tres Transformaciones del Espíritu", type: "tripartito",
+      col1: { title: "1. El Camello", items: ["Mandato: '¡Tú debes!'", "Actitud: Soporta sumiso el peso de la tradición y la moral", "Fase: Nihilismo Pasivo"] },
+      col2: { title: "2. El León", items: ["Mandato: '¡Yo quiero!'", "Actitud: Destruye los viejos valores de los sagrados deberes", "Fase: Nihilismo Activo"] },
+      col3: { title: "3. El Niño", items: ["Mandato: '¡Yo soy!'", "Actitud: Inocencia, juego, nuevo comienzo y creación de valores", "Fase: El Superhombre"] }
+    },
+    {
+      id: "n3", title: "3. Moral de Señores frente a Moral de Esclavos", type: "tabla_compleja",
+      headers: ["Criterio", "Moral de Señores (Aristocrática)", "Moral de Esclavos (Reactiva)"],
+      rows: [
+        ["Origen", "Brota espontáneamente de la fuerza y la salud", "Nace del resentimiento contra la excelencia"],
+        ["Par de Nociones", "Bueno (Noble / Vital) vs Malo (Despreciable)", "Bueno (Manso / Servil) vs Malvado (Fuerte)"],
+        ["Efecto en la Vida", "Afirmación del cuerpo, el orgullo y el presente", "Represión instintiva y promesa de trascendencia"]
+      ]
+    },
+    {
+      id: "n4", title: "4. Estadios de la Evolución Histórica hacia el Superhombre", type: "proceso_vertical",
+      steps: [
+        "1. PLATONISMO Y CRISTIANISMO: Invención del 'Mundo Verdadero' y denigración de la tierra.",
+        "2. LA MUERTE DE DIOS: Desmoronamiento de la trascendencia; advenimiento de la Modernidad.",
+        "3. EL ÚLTIMO HOMBRE: Mediocridad comfortably instalada en el pesimismo o en el confort vulgar.",
+        "4. NIHILISMO ACTIVO: Destrucción decidida de las máscaras metafísicas por el León libre.",
+        "5. EL SUPERHOMBRE: Creador inmanente de valores que abraza el Eterno Retorno."
+      ]
+    },
+    {
+      id: "n5", title: "5. Los Tres Errores de la Metafísica Occidental", type: "tripartito",
+      col1: { title: "La Ilusión del Lenguaje", items: ["Creer que a cada palabra o concepto le corresponde una sustancia fija en la realidad."] },
+      col2: { title: "El Confuso Concepto del 'Yo'", items: ["Inventar un 'sujeto' sustancial detrás del flujo ininterrumpido de la acción."] },
+      col3: { title: "El 'Mundo Verdadero'", items: ["Duplicar el mundo inventando un reino perfecto para huir del dolor del devenir sensible."] }
+    },
+    {
+      id: "n6", title: "6. Desglose Genealógico de los Valores", type: "proceso_vertical",
+      steps: [
+        "Paso 1: Análisis Fisiológico (Salud e instinto vital vs Decadencia y enfermedad).",
+        "Paso 2: Rastro Lingüístico (Etimología de las palabras 'Bueno' y 'Malo' en griego y latín).",
+        "Paso 3: Revelación del Resentimiento (La rebelión de los esclavos en la moral).",
+        "Paso 4: Propuesta de Transvaloración (Sustitución por una ética trágica inmanente)."
+      ]
+    },
+    {
+      id: "n7", title: "7. El Círculo del Eterno Retorno (Amor Fati)", type: "proceso_vertical",
+      steps: [
+        "EL IMPULSO: El peso más pesado: '¿Desearías repetir esta vida infinitas veces?'",
+        "LA PRUEBA: Si retrocedes horrorizado, perteneces a la moral del resentimiento.",
+        "LA CELEBRACIÓN: Si respondes con júbilo sagrado, has alcanzado la libertad del Superhombre.",
+        "LA CONSECUENCIA: Cada segundo del presente adquiere un valor ontológico infinito."
+      ]
+    }
+  ],
+  ortega: [
+    {
+      id: "o1", title: "1. Superación del Racionalismo y del Idealismo", type: "tabla_compleja",
+      headers: ["Corriente", "Principio Primario", "Papel de la Razón", "Consecuencia en la Vida"],
+      rows: [
+        ["Racionalismo", "La Razón Abstracta pura", "Soberana absoluta desvinculada del tiempo", "Utopismo / Desprecio de la vida cambiante"],
+        ["Vitalismo Irracional", "La Vida Biológica ciega", "Subordinada o negada ante el instinto", "Escepticismo / Relativismo salvaje"],
+        ["RACIOVITALISMO", "La VIDA VIVA (Yo + Circunstancia)", "Instrumento radical de la existencia", "Integración: La razón es una función vital"]
+      ]
+    },
+    {
+      id: "o2", title: "2. Las Tres Dimensiones de la Razón Vital", type: "tripartito",
+      col1: { title: "Razón Narrativa", items: ["El hombre no tiene naturaleza, tiene historia.", "Se comprende a sí mismo contando su biografía."] },
+      col2: { title: "Razón Histórica", items: ["Articula las experiencias de las generaciones pasadas.", "Evita tropezar en los mismos errores del pasado."] },
+      col3: { title: "Razón Circunstancial", items: ["Analiza el entorno concreto aquí y ahora.", "Permite 'salvar la circunstancia' para realizar el Yo."] }
+    },
+    {
+      id: "o3", title: "3. Diferencia Ontológica: Creencias frente a Ideas", type: "tabla_compleja",
+      headers: ["Rasgo", "Las CREENCIAS", "Las IDEAS"],
+      rows: [
+        ["Naturaleza", "Suelo inconsciente sobre el que 'estamos'", "Construcciones mentales que 'tenemos'"],
+        ["Surgimiento", "Heredadas y asumidas sin crítica deliberada", "Inventadas conscientemente cuando la creencia falla"],
+        ["Relación con el Yo", "Nos constituyen de manera inmanente y profunda", "Nos sirven como herramientas teóricas puntuales"]
+      ]
+    },
+    {
+      id: "o4", title: "4. La Estructura de la Circunstancia", type: "proceso_vertical",
+      steps: [
+        "EL YO INTERIOR: Núcleo de libertad, vocación y proyecto dramático personal.",
+        "CIRCUNSTANCIA FÍSICA: Cuerpo, entorno geográfico y limitaciones biológicas.",
+        "CIRCUNSTANCIA SOCIAL: Usos públicos, lenguaje, costumbres y grupo generacional.",
+        "CIRCUNSTANCIA HISTÓRICA: La 'Altura de los Tiempos' y el repertorio de soluciones heredadas.",
+        "SÍNTESIS RACIOVITAL: 'Salvar la circunstancia': Transformar el entorno para realizar el Yo."
+      ]
+    },
+    {
+      id: "o5", title: "5. Hombre Masa frente a Minoría Selecta", type: "tabla_compleja",
+      headers: ["Criterio", "El Hombre Masa", "La Minoría Selecta"],
+      rows: [
+        ["Exigencia Personal", "Cero autoexigencia; se siente perfecto tal como es", "Disciplina rigurosa y constante autosuperación"],
+        ["Derechos y Deberes", "Exige todos los derechos sin asumir obligaciones", "Concibe la vida como un deber y un servicio a ideales"],
+        ["Acción Social", "Imposición directa de la vulgaridad mediante la fuerza", "Respeto al debate, a la norma legal y a la excelencia"]
+      ]
+    },
+    {
+      id: "o6", title: "6. Evolución del Pensamiento Filosófico según Ortega", type: "proceso_vertical",
+      steps: [
+        "ANTIGÜEDAD (Realismo): Preocupación por las Cosas del mundo exterior.",
+        "MODERNIDAD (Idealismo): Descubrimiento del Sujeto y de la conciencia interior.",
+        "CONTEMPORANEIDAD (Raciovitalismo): Descubrimiento del dato primario: EL VIVIR (Sujeto + Mundo en coexistencia)."
+      ]
+    },
+    {
+      id: "o7", title: "7. El Triángulo del Perspectivismo Orteguiano", type: "tripartito",
+      col1: { title: "La Realidad Objetiva", items: ["Es multiforme y polifónica.", "Imposible de agotar por un solo ojo abstracto."] },
+      col2: { title: "El Punto de Vista", items: ["Es el lugar único que ocupa cada sujeto.", "No deforma la verdad: es su única condición."] },
+      col3: { title: "La Verdad Absoluta", items: ["Es la suma organizada de todas las perspectivas.", "Exige la colaboración armónica de la humanidad."] }
+    }
+  ]
+};
+
+// ==========================================
+// 5. BANCO DE EXÁMENES PEVAU (OFICIALES)
+// ==========================================
+const BANCO_EXAMENES = [
+  {
+    id: "ex-platon-1",
+    autorOculto: "Platón",
+    obraCita: "— Platón, República, Libro VII (517a - 518b)",
+    disertacion: "Analice críticamente la tensión entre la percepción sensible cambiante y la posibilidad de alcanzar verdades universales u objetivas en la sociedad contemporánea de las redes sociales y la posverdad.",
+    texto: "—Pues bien, querido Glaucón —proseguí—, esta imagen hay que aplicarla enteramente a lo que con anterioridad se ha dicho, comparando la región que se manifiesta por medio de la vista con la morada-prisión, y la luz del fuego que hay en ella con el poder del sol. Si comparas la subida al mundo de arriba y la contemplación de las cosas de este con el ascenso del alma hacia la región inteligible, no errarás con respecto a mi vislumbre...",
+    cuestion1: "1. Identifique la idea principal del texto y señale la estructura argumentativa planteada por el autor.",
+    cuestion2: "2. Explique el significado de los términos 'región inteligible' y 'morada-prisión' dentro del pensamiento del autor.",
+    cuestion3: "3. Relacione la teoría ontológica y política del autor con la postura de otro filósofo o corriente filosófica de la Época Contemporánea.",
+    idealIA: `
+      MODULO 10/10 DE EXCELENCIA PEVAU:
+      
+      PARTE I: DISERTACIÓN FILOSÓFICA
+      La cuestión sobre la posverdad en la sociedad digital conecta directamente con el núcleo del dualismo platónico. En un entorno saturado de algoritmos que promueven cámaras de eco, asistimos a una hipertrofia de la Doxa (opinión infundada) donde las impresiones emocionales sustituyen a la verdad objetiva. Frente a esto, Platón nos recuerda que sin un estándar inteligible de Verdad, la convivencia política degenera en sofística y demagogia. Desde una perspectiva contemporánea, la pensadora Hannah Arendt en 'Verdad y Política' coincide en que la destrucción de la realidad fáctica abre la puerta al totalitarismo, si bien desde una visión inmanente que no requiere recurrir a un Mundo Inteligible trascendente.
+
+      PARTE II: CUESTIONES SOBRE EL TEXTO
+      1. Idea Principal: Establecer la correspondencia alegórica del Mito de la Caverna, identificando la caverna con el mundo sensible y el exterior con el mundo inteligible al que debe ascender el alma.
+      2. Términos: 'Región inteligible' alude al reino inmaterial de las Ideas eternas gobernado por el Bien; 'Morada-prisión' simboliza el mundo sensible corpóreo y aparente donde el alma está limitada por los sentidos.
+      3. Comparación Transversal: Se contrasta el dualismo platónico con el Raciovitalismo de Ortega y Gasset. Mientras Platón desvalora el mundo sensible como copia degradada, Ortega afirma que la verdad no exige huir a un reino trascendente, sino salvar la circunstancia concreta mediante la Razón Vital.
+    `
+  },
+  {
+    id: "ex-descartes-1",
+    autorOculto: "René Descartes",
+    obraCita: "— René Descartes, Meditaciones Metafísicas (Meditación II)",
+    disertacion: "Problematice el papel de la 'duda radical' como herramienta crítica en la era de las noticias falsas e inteligencia artificial. ¿Sigue siendo válida la búsqueda de certezas absolutas?",
+    texto: "Supongo, pues, que todas las cosas que veo son falsas; me persuado de que nunca ha existido nada de lo que mi memoria, llena de mentiras, me representa; no tengo sentido alguno; el cuerpo, la figura, la extensión, el movimiento y el lugar son quimeras. ¿Qué es entonces lo que podrá considerarse verdadero? Quizá ninguna otra cosa sino que no hay nada cierto en el mundo...",
+    cuestion1: "1. Exponga el problema filosófico central planteado en el texto y sintetice sus argumentos principales.",
+    cuestion2: "2. Defina el concepto de 'extensión' y explique el procedimiento de la 'duda metódica' en el autor.",
+    cuestion3: "3. Contraste la búsqueda cartesiana de la certeza con el Perspectivismo o la Crítica a la Metafísica de Friedrich Nietzsche.",
+    idealIA: `
+      MODULO 10/10 DE EXCELENCIA PEVAU:
+
+      PARTE I: DISERTACIÓN FILOSÓFICA
+      La duda metódica cartesiana cobra una vigencia insospechada en la era de los 'deepfakes' y las inteligencias artificiales generativas, donde la percepción visual deja de ser prueba fáctica de realidad. La decisión cartesiana de no dar por verdadero nada de lo que pueda ser puesto en duda actúa como un antídoto epistémico contra la credulidad. No obstante, mientras Descartes usa la duda como un edificio provisional para hallar una certeza absoluta inmune (el Cogito), en la posmodernidad (Byung-Chul Han), la duda sistemática se convierte en un estado permanente que arruina la confianza comunitaria.
+
+      PARTE II: CUESTIONES SOBRE EL TEXTO
+      1. Problema central: La radicación de la duda hiperbólica como paso previo ineludible para desmantelar todos los prejuicios sensibles antes del descubrimiento de la primera certeza.
+      2. Términos: 'Extensión' es el atributo esencial de la Res Extensa (materia geométrica); 'Duda metódica' es el instrumento intelectual voluntario, metódico y provisional para hallar certezas indiscutibles.
+      3. Comparación Transversal: Mientras Descartes exige un fundamento único inquebrantable (Cogito / Dios), Nietzsche denuncia en 'El Crepúsculo de los Ídolos' que el sujeto pensante cartesiano es una ficción gramatical engañosa derivada del resentimiento contra el devenir ininterrumpido de la vida.
+    `
+  },
+  {
+    id: "ex-nietzsche-1",
+    autorOculto: "Friedrich Nietzsche",
+    obraCita: "— Friedrich Nietzsche, La Gaya Ciencia (Aforismo 125)",
+    disertacion: "Diserte sobre el conflicto entre los dogmatismos morales tradicionales y el imperativo contemporáneo de la libertad e invención de valores individuales.",
+    texto: "¿No habéis oído hablar de aquel hombre loco que, en pleno día, encendía una linterna y echaba a correr por la plaza pública gritando sin cesar: '¡Busco a Dios! ¡Busco a Dios!'? Como allí se hallaban congregados muchos que no creían en Dios, provocó una gran risa. '¿Se ha perdido?', decía uno. '¿Se ha extraviado como un niño?', decía otro. (...) '¿Dónde se ha ido Dios?', les gritó. '¡Yo os lo voy a decir! ¡Nosotros lo hemos matado, vosotros y yo! ¡Todos nosotros somos sus asesinos!'...",
+    cuestion1: "1. Explique el significado de la alegoría del 'Hombre Loco' en el texto presentado.",
+    cuestion2: "2. Defina los términos 'Muerte de Dios' y 'Nihilismo' dentro del cuerpo teórico del autor.",
+    cuestion3: "3. Relacione la propuesta ética del autor con la teoría de las virtudes y la Polis de Platón.",
+    idealIA: `
+      MODULO 10/10 DE EXCELENCIA PEVAU:
+
+      PARTE I: DISERTACIÓN FILOSÓFICA
+      El diagnóstico nietzscheano sobre el colapso de los absolutos morales tradicionales ofrece una lente crítica fundamental para comprender el desorientado relativismo de la cultura contemporánea. La quiebra de los grandes relatos teológicos e ideológicos deja al sujeto contemporáneo ante el abismo de crear sus propios valores inmanentes o sucumbir al nihilismo pasivo del consumo hedonista. La ética de la autoresponsabilidad que plantea Nietzsche demanda una fuerza trágica que pocos están dispuestos a asumir.
+
+      PARTE II: CUESTIONES SOBRE EL TEXTO
+      1. Significado: La alegoría expresa el acontecimiento histórico de la pérdida de fe en los referentes trascendentes metafísicos y cómo la sociedad moderna aún no ha comprendido las colosales consecuencias nihilistas de este hecho.
+      2. Términos: 'Muerte de Dios' representa el fin de la metafísica trascendente; 'Nihilismo' es el estado de vacío resultante que puede ser pasivo (decadencia) u activo (fuerza creadora de nuevos valores).
+      3. Comparación Transversal: Oposición radical con Platón. Platón busca la estabilidad cósmica en una Idea del Bien inmutable tras el mundo sensible; Nietzsche proclama la destrucción de esa misma Idea por considerar que emascula la vitalidad trágica inmanente del ser humano.
+    `
+  },
+  {
+    id: "ex-ortega-1",
+    autorOculto: "José Ortega y Gasset",
+    obraCita: "— José Ortega y Gasset, El Tema de Nuestro Tiempo",
+    disertacion: "¿Es posible conciliar las exigencias de la Razón científica con la espontaneidad inmanente de la Vida humana en la época de la hipertecnología?",
+    texto: "La doctrina del punto de vista exige que en el sistema de la verdad se acoja la perspectiva de cada sujeto cognoscente. La verdad abstracta e idéntica para todos no existe: es una utopía elaborada por la razón pura. La realidad se ofrece en infinitas facetas, y cada vida humana representa una perspectiva insustituible sobre el cosmos...",
+    cuestion1: "1. Identifique la tesis principal defendida en el fragmento y resuma sus argumentos.",
+    cuestion2: "2. Defina los conceptos de 'Perspectivismo' y 'Circunstancia' en la filosofía del autor.",
+    cuestion3: "3. Compare el Raciovitalismo de Ortega y Gasset con el Racionalismo Absoluto de René Descartes.",
+    idealIA: `
+      MODULO 10/10 DE EXCELENCIA PEVAU:
+
+      PARTE I: DISERTACIÓN FILOSÓFICA
+      La reconciliación entre razón y vida constituye el desafío fundamental de la era digital. El cientificismo tecno-económico intenta reducir la existencia a parámetros cuantitativos y datos algorítmicos. La Razón Vital orteguiana reclama que la tecnología se ponga al servicio de las biografías humanas reales y no a la inversa. La ciencia no debe sofocar la circunstancia concreta del sujeto, sino enriquecer su repertorio de posibilidades de autorrealización.
+
+      PARTE II: CUESTIONES SOBRE EL TEXTO
+      1. Tesis principal: La verdad objetiva no es un dato idéntico y abstracto, sino una estructura polifónica construida por la suma articulada de las múltiples perspectivas individuales.
+      2. Términos: 'Perspectivismo' es la teoría epistemológica que sitúa la perspectiva como la condición que posibilita el conocimiento; 'Circunstancia' es el entorno físico, social e histórico que rodea indivisiblemente al Yo.
+      3. Comparación Transversal: Se contrasta el Perspectivismo con el Racionalismo Cartesiano. Descartes busca una verdad pura desvinculada del tiempo y del cuerpo (Cogito sin historia); Ortega rechaza esta razón pura por abstracta y sostiene que la razón es vital e histórica.
+    `
+  }
+];
+
+// ==========================================
+// COMPONENTE PRINCIPAL (APP)
+// ==========================================
+export default function App() {
+  // Navegación y Estado General
+  const [activeTab, setActiveTab] = useState('temario');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Reproductor de Música y Pomodoro
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+  const [pomoMinutes, setPomoMinutes] = useState(25);
+  const [pomoSeconds, setPomoSeconds] = useState(0);
+  const [pomoActive, setPomoActive] = useState(false);
+
+  // Estado Temario
+  const [autorTemario, setAutorTemario] = useState('platon');
+  const [customTemarios, setCustomTemarios] = useState(TEMARIO_FALLBACKS);
+  const [isLoadingDocs, setIsLoadingDocs] = useState(false);
+  const editorRef = useRef(null);
+
+  // Estado Glosario
+  const [autorGlosario, setAutorGlosario] = useState('platon');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [glosarioState, setGlosarioState] = useState(GLOSARIO_COMPLETO);
+  const [showAddTermModal, setShowAddTermModal] = useState(false);
+  const [newTerm, setNewTerm] = useState('');
+  const [newDef, setNewDef] = useState('');
+
+  // Estado Atlas
+  const [autorAtlas, setAutorAtlas] = useState('platon');
+  const [esquemaIndex, setEsquemaIndex] = useState(0);
+
+  // Estado Simulador
+  const [simuladorStep, setSimuladorStep] = useState('seleccion'); // 'seleccion', 'resolviendo', 'revision'
+  const [examenSeleccionado, setExamenSeleccionado] = useState(null);
+  const [respuestaAlumno, setRespuestaAlumno] = useState('');
+  const [notaFinal, setNotaFinal] = useState(null);
+  const [penalizacionOrtografia, setPenalizacionOrtografia] = useState(false);
+
+  // EFECTO REPRODUCTOR AUDIO
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.play().catch(() => setIsPlaying(false));
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [isPlaying, currentTrackIndex]);
+
+  // EFECTO POMODORO
+  useEffect(() => {
+    let interval = null;
+    if (pomoActive) {
+      interval = setInterval(() => {
+        if (pomoSeconds > 0) {
+          setPomoSeconds(s => s - 1);
+        } else if (pomoMinutes > 0) {
+          setPomoMinutes(m => m - 1);
+          setPomoSeconds(59);
+        } else {
+          setPomoActive(false);
+          alert("¡Tiempo de sesión Pomodoro completado! Tómate un descanso.");
+        }
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [pomoActive, pomoMinutes, pomoSeconds]);
+
+  // DESCARGA GOOGLE DOCS PROXY
+  const descargarGoogleDoc = async (autorKey) => {
+    const docId = GOOGLE_DOCS_IDS[autorKey];
+    if (!docId) return;
+    setIsLoadingDocs(true);
+    try {
+      const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(`https://docs.google.com/document/d/${docId}/export?format=txt`)}`);
+      if (!response.ok) throw new Error("Error en la descarga");
+      const text = await response.text();
+      const formattedHTML = `
+        <h1 class="text-3xl font-serif font-bold text-amber-700 mb-4">TEMARIO OFICIAL SINCRONIZADO: ${autorKey.toUpperCase()}</h1>
+        <div class="whitespace-pre-line text-slate-700 font-serif leading-relaxed">${text}</div>
+      `;
+      setCustomTemarios(prev => ({ ...prev, [autorKey]: formattedHTML }));
+      if (editorRef.current) editorRef.current.innerHTML = formattedHTML;
+    } catch (err) {
+      alert("No se pudo conectar con Google Docs. Se mantendrá la versión offline guardada.");
+    } finally {
+      setIsLoadingDocs(false);
+    }
+  };
+
+  const restaurarTemarioOficial = () => {
+    const fallbackHTML = TEMARIO_FALLBACKS[autorTemario];
+    setCustomTemarios(prev => ({ ...prev, [autorTemario]: fallbackHTML }));
+    if (editorRef.current) editorRef.current.innerHTML = fallbackHTML;
+  };
+
+  // FUNCIONES DE FORMATEO TEXTO
+  const formatText = (command, value = null) => {
+    document.execCommand(command, false, value);
+  };
+
+  // FUNCION AÑADIR CONCEPTO GLOSARIO
+  const handleAddConcept = (e) => {
+    e.preventDefault();
+    if (!newTerm.trim() || !newDef.trim()) return;
+    const nuevo = { term: newTerm.trim(), def: newDef.trim() };
+    setGlosarioState(prev => ({
+      ...prev,
+      [autorGlosario]: [nuevo, ...prev[autorGlosario]]
+    }));
+    setNewTerm('');
+    setNewDef('');
+    setShowAddTermModal(false);
+  };
+
+  // FUNCIONALIDAD SIMULADOR
+  const iniciarExamen = (examenId = null) => {
+    let seleccionado = null;
+    if (examenId) {
+      seleccionado = BANCO_EXAMENES.find(e => e.id === examenId);
+    } else {
+      seleccionado = BANCO_EXAMENES[Math.floor(Math.random() * BANCO_EXAMENES.length)];
+    }
+    setExamenSeleccionado(seleccionado);
+    setRespuestaAlumno('');
+    setSimuladorStep('resolviendo');
+  };
+
+  const entregarExamen = () => {
+    const palabras = respuestaAlumno.trim().split(/\s+/).filter(w => w.length > 0).length;
+    if (palabras < 20) {
+      setNotaFinal(0.0);
+    } else {
+      let notaBase = 8.5;
+      if (palabras > 250) notaBase += 1.0;
+      if (penalizacionOrtografia) notaBase -= 1.0;
+      setNotaFinal(Math.min(10.0, Math.max(0.0, notaBase)));
+    }
+    setSimuladorStep('revision');
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-100 text-slate-800 font-sans flex flex-col justify-between selection:bg-amber-200">
+      
+      {/* ELEMENTO AUDIO OCULTO */}
+      <audio 
+        ref={audioRef} 
+        src={TRACKS[currentTrackIndex].url} 
+        onEnded={() => setCurrentTrackIndex((currentTrackIndex + 1) % TRACKS.length)}
+      />
+
+      {/* HEADER PRINCIPAL DE NAVEGACIÓN */}
+      <header className="bg-slate-900 text-white shadow-lg sticky top-0 z-50 border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col lg:flex-row justify-between items-center gap-4">
+          
+          <div className="flex items-center justify-between w-full lg:w-auto">
+            <div className="flex items-center gap-3">
+              <div className="bg-amber-500 p-2 rounded-xl text-slate-950 shadow-inner">
+                <GraduationCap size={26} />
+              </div>
+              <div>
+                <h1 className="text-xl font-serif font-bold text-amber-500 tracking-wider">OBJETIVO PEvAU</h1>
+                <p className="text-[10px] text-slate-400 font-mono tracking-widest uppercase">Historia de la Filosofía • Andalucía</p>
+              </div>
+            </div>
+            
+            <button 
+              className="lg:hidden p-2 text-slate-300 hover:text-white"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
+            </button>
+          </div>
+
+          {/* MENÚ DE SECCIONES (TABS) */}
+          <nav className={`${isMobileMenuOpen ? 'flex' : 'hidden'} lg:flex flex-wrap gap-1 bg-slate-800 p-1.5 rounded-xl border border-slate-700 w-full lg:w-auto justify-center`}>
+            {[
+              { id: 'temario', label: 'Temario Oficial', icon: BookOpen },
+              { id: 'glosario', label: 'Glosario (100)', icon: FileText },
+              { id: 'atlas', label: 'Atlas Experto (28)', icon: Layers },
+              { id: 'simulador', label: 'Simulador PEvAU', icon: ShieldCheck }
+            ].map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button 
+                  key={tab.id} 
+                  onClick={() => { setActiveTab(tab.id); setIsMobileMenuOpen(false); }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all ${
+                    activeTab === tab.id ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                  }`}
+                >
+                  <Icon size={16} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* HERRAMIENTAS DE ESTUDIO (MÚSICA & POMODORO) */}
+          <div className={`${isMobileMenuOpen ? 'flex' : 'hidden'} lg:flex items-center gap-3 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 w-full lg:w-auto justify-between lg:justify-end`}>
+            
+            {/* AUDIOPLAYER */}
+            <div className="flex items-center gap-2 border-r border-slate-800 pr-3">
+              <button 
+                onClick={() => setIsPlaying(!isPlaying)} 
+                className="text-amber-500 hover:text-amber-400 transition"
+                title={isPlaying ? "Pausar música" : "Reproducir música de concentración"}
+              >
+                {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+              </button>
+              <Music size={14} className="text-slate-500" />
+              <select 
+                value={currentTrackIndex} 
+                onChange={(e) => setCurrentTrackIndex(Number(e.target.value))}
+                className="bg-slate-900 text-slate-300 text-[11px] outline-none border border-slate-700 rounded px-1 py-0.5 max-w-[120px] truncate"
+              >
+                {TRACKS.map((t, idx) => (
+                  <option key={t.id} value={idx}>{t.title}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* POMODORO TIMER */}
+            <div className="flex items-center gap-2">
+              <span className="text-slate-200 font-mono font-bold text-sm">
+                {String(pomoMinutes).padStart(2, '0')}:{String(pomoSeconds).padStart(2, '0')}
+              </span>
+              <button 
+                onClick={() => setPomoActive(!pomoActive)} 
+                className={`px-2 py-1 rounded text-[10px] font-bold transition ${
+                  pomoActive ? 'bg-rose-900 text-rose-200 hover:bg-rose-800' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                {pomoActive ? 'PAUSA' : 'POMODORO'}
+              </button>
+              <button 
+                onClick={() => { setPomoActive(false); setPomoMinutes(25); setPomoSeconds(0); }}
+                className="text-slate-500 hover:text-slate-300"
+                title="Reiniciar temporizador"
+              >
+                <RotateCcw size={12} />
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      </header>
+
+      {/* CONTENIDO PRINCIPAL */}
+      <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 flex flex-col">
+        
+        {/* ================= SECCIÓN 1: TEMARIO ================= */}
+        {activeTab === 'temario' && (
+          <div className="flex-1 flex flex-col lg:flex-row gap-6 h-[80vh]">
+            
+            {/* PANEL DE NAVEGACIÓN DE AUTORES */}
+            <div className="lg:w-72 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col justify-between">
+              <div>
+                <h2 className="font-bold text-slate-800 uppercase text-xs tracking-wider border-b pb-3 mb-3 flex justify-between items-center">
+                  <span>Selección de Autor</span>
+                  <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-mono">4 Autores</span>
+                </h2>
+                
+                <div className="flex flex-col gap-2">
+                  {[
+                    { id: 'platon', name: 'Platón', period: 'Grecia Clásica' },
+                    { id: 'descartes', name: 'René Descartes', period: 'Racionalismo Barroco' },
+                    { id: 'nietzsche', name: 'Friedrich Nietzsche', period: 'Crítica de la Modernidad' },
+                    { id: 'ortega', name: 'Ortega y Gasset', period: 'Raciovitalismo Español' }
+                  ].map(autor => (
+                    <button 
+                      key={autor.id} 
+                      onClick={() => { setAutorTemario(autor.id); }} 
+                      className={`text-left px-4 py-3 rounded-xl transition-all flex flex-col border ${
+                        autorTemario === autor.id 
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-md' 
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span className="font-bold text-sm">{autor.name}</span>
+                      <span className={`text-[10px] font-serif italic ${autorTemario === autor.id ? 'text-amber-400' : 'text-slate-500'}`}>
+                        {autor.period}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* BOTONES DE SINCRONIZACIÓN GOOGLE DOCS Y RESTAURACIÓN */}
+              <div className="flex flex-col gap-2 pt-4 border-t border-slate-100">
+                <button 
+                  onClick={() => descargarGoogleDoc(autorTemario)}
+                  disabled={isLoadingDocs}
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow-sm disabled:opacity-50"
+                >
+                  <RefreshCw size={14} className={isLoadingDocs ? 'animate-spin' : ''} />
+                  <span>{isLoadingDocs ? 'Sincronizando...' : 'Sincronizar Google Doc'}</span>
+                </button>
+                <button 
+                  onClick={restaurarTemarioOficial}
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-2 transition border border-slate-300"
+                >
+                  <Download size={14} />
+                  <span>Restaurar Oficial Offline</span>
+                </button>
+              </div>
+            </div>
+
+            {/* EDITOR DE TEXTO INTERACTIVO (CONTENTEDITABLE) */}
+            <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+              
+              {/* BARRA DE HERRAMIENTAS DE EDICIÓN */}
+              <div className="bg-slate-50 border-b border-slate-200 p-2 flex flex-wrap gap-1 items-center justify-between px-4">
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={() => formatText('bold')} 
+                    className="p-2 hover:bg-white rounded-lg font-bold font-serif text-slate-700 border border-transparent hover:border-slate-300"
+                    title="Negrita"
+                  >
+                    B
+                  </button>
+                  <button 
+                    onClick={() => formatText('italic')} 
+                    className="p-2 hover:bg-white rounded-lg italic font-serif text-slate-700 border border-transparent hover:border-slate-300"
+                    title="Cursiva"
+                  >
+                    I
+                  </button>
+                  <button 
+                    onClick={() => formatText('underline')} 
+                    className="p-2 hover:bg-white rounded-lg underline font-serif text-slate-700 border border-transparent hover:border-slate-300"
+                    title="Subrayado"
+                  >
+                    U
+                  </button>
+                  <div className="w-px h-6 bg-slate-300 mx-2"></div>
+                  
+                  {/* RESALTADORES MULTICOLOR */}
+                  <span className="text-xs text-slate-400 font-bold mr-1">Resaltar:</span>
+                  <button 
+                    onClick={() => formatText('hiliteColor', '#fef08a')} 
+                    className="w-6 h-6 rounded-full bg-yellow-200 border border-yellow-400 hover:scale-110 transition"
+                    title="Resaltado Amarillo"
+                  />
+                  <button 
+                    onClick={() => formatText('hiliteColor', '#bbf7d0')} 
+                    className="w-6 h-6 rounded-full bg-emerald-200 border border-emerald-400 hover:scale-110 transition"
+                    title="Resaltado Verde"
+                  />
+                  <button 
+                    onClick={() => formatText('hiliteColor', '#fecdd3')} 
+                    className="w-6 h-6 rounded-full bg-rose-200 border border-rose-400 hover:scale-110 transition"
+                    title="Resaltado Rojo"
+                  />
+                </div>
+
+                <div className="text-[11px] text-slate-400 italic font-serif">
+                  * Edita el texto libremente. Tus anotaciones se conservan localmente.
+                </div>
+              </div>
+
+              {/* ÁREA DE LECTURA Y EDICIÓN */}
+              <div 
+                ref={editorRef}
+                className="flex-1 p-6 lg:p-10 overflow-y-auto prose prose-slate max-w-none focus:outline-none font-serif leading-relaxed text-slate-800 selection:bg-amber-200"
+                contentEditable={true}
+                suppressContentEditableWarning={true}
+                dangerouslySetInnerHTML={{ __html: customTemarios[autorTemario] }}
+                onBlur={(e) => setCustomTemarios(prev => ({ ...prev, [autorTemario]: e.currentTarget.innerHTML }))}
+              />
+            </div>
+
+          </div>
+        )}
+
+        {/* ================= SECCIÓN 2: GLOSARIO NORMATIVO (100 CONCEPTOS) ================= */}
+        {activeTab === 'glosario' && (
+          <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+            
+            {/* ENCABEZADO DE BÚSQUEDA Y SELECCIÓN DE AUTOR */}
+            <div className="bg-slate-900 text-white p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                {[
+                  { id: 'platon', label: 'Platón (25)' },
+                  { id: 'descartes', label: 'Descartes (25)' },
+                  { id: 'nietzsche', label: 'Nietzsche (25)' },
+                  { id: 'ortega', label: 'Ortega y Gasset (25)' }
+                ].map(autor => (
+                  <button 
+                    key={autor.id} 
+                    onClick={() => setAutorGlosario(autor.id)} 
+                    className={`px-4 py-2 rounded-xl font-bold text-xs uppercase transition-all ${
+                      autorGlosario === autor.id 
+                        ? 'bg-amber-500 text-slate-950 shadow-md' 
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    {autor.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2 w-full md:w-auto">
+                {/* BUSCADOR */}
+                <div className="relative flex-1 md:w-64">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Filtrar concepto..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full bg-slate-800 text-white pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-700 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {/* BOTÓN AÑADIR TÉRMINO */}
+                <button 
+                  onClick={() => setShowAddTermModal(true)}
+                  className="bg-amber-500 text-slate-950 p-2 rounded-xl font-bold hover:bg-amber-400 transition"
+                  title="Añadir concepto al glosario"
+                >
+                  <Plus size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* LISTADO DE CONCEPTOS ESTILO DICCIONARIO ACADÉMICO */}
+            <div className="flex-1 p-6 overflow-y-auto bg-slate-50">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(glosarioState[autorGlosario] || [])
+                  .filter(item => 
+                    item.term.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                    item.def.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((item, index) => (
+                    <div 
+                      key={index} 
+                      className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:border-amber-400 transition flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="text-base font-bold text-slate-900 font-serif">{item.term}</h3>
+                          <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-md uppercase font-mono">Normativo</span>
+                        </div>
+                        <p className="text-slate-600 text-xs font-serif leading-relaxed">{item.def}</p>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* MODAL PARA AÑADIR CONCEPTO */}
+        {showAddTermModal && (
+          <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-slate-900 font-serif text-lg">Añadir Concepto ({autorGlosario.toUpperCase()})</h3>
+                <button onClick={() => setShowAddTermModal(false)} className="text-slate-400 hover:text-slate-600">
+                  <X size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleAddConcept} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Término Filosófico</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={newTerm} 
+                    onChange={(e) => setNewTerm(e.target.value)}
+                    placeholder="Ej. Res Cogitans"
+                    className="w-full border rounded-xl p-3 text-sm focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Definición Académica (3-4 líneas)</label>
+                  <textarea 
+                    required 
+                    rows={4}
+                    value={newDef} 
+                    onChange={(e) => setNewDef(e.target.value)}
+                    placeholder="Escribe la definición normativa precisa..."
+                    className="w-full border rounded-xl p-3 text-sm focus:outline-none focus:border-amber-500 font-serif"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowAddTermModal(false)} 
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="px-6 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 shadow"
+                  >
+                    Guardar Concepto
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ================= SECCIÓN 3: ATLAS EXPERTO (28 ESQUEMAS) ================= */}
+        {activeTab === 'atlas' && (
+          <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+            
+            {/* SELECCIÓN DE AUTOR Y NAVEGACIÓN DE ESQUEMAS */}
+            <div className="bg-slate-900 text-white p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'platon', label: 'Platón (7)' },
+                  { id: 'descartes', label: 'Descartes (7)' },
+                  { id: 'nietzsche', label: 'Nietzsche (7)' },
+                  { id: 'ortega', label: 'Ortega y Gasset (7)' }
+                ].map(autor => (
+                  <button 
+                    key={autor.id} 
+                    onClick={() => { setAutorAtlas(autor.id); setEsquemaIndex(0); }} 
+                    className={`px-4 py-2 rounded-xl font-bold text-xs uppercase transition-all ${
+                      autorAtlas === autor.id 
+                        ? 'bg-amber-500 text-slate-950 shadow-md' 
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    {autor.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* CONTROLES ANTERIOR / SIGUIENTE */}
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-mono text-slate-400">
+                  Esquema {esquemaIndex + 1} de {ATLAS_COMPLETO[autorAtlas]?.length || 7}
+                </span>
+                <button 
+                  onClick={() => setEsquemaIndex((esquemaIndex - 1 + ATLAS_COMPLETO[autorAtlas].length) % ATLAS_COMPLETO[autorAtlas].length)}
+                  className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-white transition"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button 
+                  onClick={() => setEsquemaIndex((esquemaIndex + 1) % ATLAS_COMPLETO[autorAtlas].length)}
+                  className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-white transition"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* ÁREA DE VISUALIZACIÓN DEL ESQUEMA CSS */}
+            <div className="flex-1 p-6 bg-slate-100 flex items-center justify-center overflow-y-auto">
+              {(() => {
+                const esquema = ATLAS_COMPLETO[autorAtlas]?.[esquemaIndex];
+                if (!esquema) return null;
+
+                return (
+                  <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 w-full max-w-4xl">
+                    <h3 className="text-xl font-bold font-serif text-slate-900 mb-6 border-b pb-3 text-center border-amber-200">
+                      {esquema.title}
+                    </h3>
+
+                    {/* TIPO 1: TABLA COMPLEJA */}
+                    {esquema.type === 'tabla_compleja' && (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-slate-900 text-white">
+                              {esquema.headers.map((h, i) => (
+                                <th key={i} className="p-4 font-bold text-xs uppercase tracking-wider border border-slate-800">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {esquema.rows.map((row, i) => (
+                              <tr key={i} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                                {row.map((cell, j) => (
+                                  <td key={j} className="p-4 border border-slate-200 font-serif text-xs text-slate-800 leading-relaxed">{cell}</td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {/* TIPO 2: TRIPARTITO */}
+                    {esquema.type === 'tripartito' && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {[esquema.col1, esquema.col2, esquema.col3].map((col, idx) => (
+                          <div key={idx} className="bg-slate-50 p-6 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                            <div>
+                              <h4 className="font-bold text-amber-700 text-sm mb-4 border-b pb-2 font-serif">{col.title}</h4>
+                              <ul className="space-y-2">
+                                {col.items.map((item, i) => (
+                                  <li key={i} className="text-xs font-serif text-slate-700 flex items-start gap-2">
+                                    <span className="text-amber-500 font-bold">•</span>
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* TIPO 3: PROCESO VERTICAL */}
+                    {esquema.type === 'proceso_vertical' && (
+                      <div className="flex flex-col gap-3">
+                        {esquema.steps.map((step, idx) => (
+                          <div key={idx} className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div className="w-8 h-8 rounded-full bg-slate-900 text-amber-400 font-bold flex items-center justify-center text-xs shrink-0">
+                              {idx + 1}
+                            </div>
+                            <p className="font-serif text-xs text-slate-800 leading-relaxed">{step}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                  </div>
+                );
+              })()}
+            </div>
+
+          </div>
+        )}
+
+        {/* ================= SECCIÓN 4: SIMULADOR PEVAU (EXAMEN OFICIAL) ================= */}
+        {activeTab === 'simulador' && (
+          <div className="h-[80vh] flex flex-col">
+            
+            {/* ETAPA 1: SELECCIÓN DE EXAMEN */}
+            {simuladorStep === 'seleccion' && (
+              <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
+                <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-6">
+                  <ShieldCheck size={48} />
+                </div>
+                <h2 className="text-3xl font-serif font-bold text-slate-900 mb-2">Simulador Oficial PEvAU</h2>
+                <p className="text-slate-600 max-w-md mb-8 text-sm leading-relaxed">
+                  Entrena con pruebas aleatorias estructuradas exactamente según el modelo oficial de examen (Parte I: Disertación + Parte II: Cuestiones).
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button 
+                    onClick={() => iniciarExamen()}
+                    className="px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-lg transition flex items-center justify-center gap-3"
+                  >
+                    <Dices size={20} />
+                    <span>Generar Examen Aleatorio</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ETAPA 2: RESOLUCIÓN DEL EXAMEN */}
+            {simuladorStep === 'resolviendo' && examenSeleccionado && (
+              <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden">
+                
+                {/* ENUNCIADO DEL EXAMEN (IZQUIERDA) */}
+                <div className="lg:w-1/2 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 overflow-y-auto">
+                  <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl mb-6">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-200 px-2 py-0.5 rounded font-mono">PARTE I • DISERTACIÓN (2,5 PUNTOS)</span>
+                    <p className="font-serif text-sm font-bold text-slate-900 mt-2 leading-relaxed">
+                      {examenSeleccionado.disertacion}
+                    </p>
+                  </div>
+
+                  <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 mb-6">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 bg-slate-200 px-2 py-0.5 rounded font-mono mb-3 inline-block">PARTE II • TEXTO Y CUESTIONES (7,5 PUNTOS)</span>
+                    <blockquote className="border-l-4 border-slate-400 pl-4 italic text-slate-700 font-serif leading-relaxed text-sm mb-3">
+                      "{examenSeleccionado.texto}"
+                    </blockquote>
+                    <p className="text-right text-xs font-bold text-slate-400 font-serif">{examenSeleccionado.obraCita}</p>
+                  </div>
+
+                  <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200">
+                    <h4 className="text-xs font-bold text-slate-900 uppercase">Cuestiones Normativas:</h4>
+                    <p className="text-xs font-serif text-slate-700">{examenSeleccionado.cuestion1}</p>
+                    <p className="text-xs font-serif text-slate-700">{examenSeleccionado.cuestion2}</p>
+                    <p className="text-xs font-serif text-slate-700">{examenSeleccionado.cuestion3}</p>
+                  </div>
+                </div>
+
+                {/* CAJA DE RESPUESTA DEL ALUMNO (DERECHA) */}
+                <div className="lg:w-1/2 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                  <div className="bg-slate-900 text-white px-6 py-3 flex justify-between items-center">
+                    <span className="font-bold text-xs uppercase tracking-wider">Tu Ejercicio Escrito</span>
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={penalizacionOrtografia} 
+                          onChange={(e) => setPenalizacionOrtografia(e.target.checked)} 
+                          className="rounded text-amber-500 focus:ring-0"
+                        />
+                        <span>Simular Penalización Ortográfica (-1.0)</span>
+                      </label>
+                      <button 
+                        onClick={entregarExamen}
+                        className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow transition"
+                      >
+                        Entregar Examen
+                      </button>
+                    </div>
+                  </div>
+
+                  <textarea 
+                    value={respuestaAlumno}
+                    onChange={(e) => setRespuestaAlumno(e.target.value)}
+                    className="flex-1 p-6 outline-none resize-none font-serif text-slate-800 text-sm leading-relaxed bg-slate-50 focus:bg-white transition"
+                    placeholder="Escribe aquí tu disertación completa y las tres cuestiones argumentadas..."
+                  />
+                  
+                  <div className="bg-slate-100 px-6 py-2 border-t text-right text-xs font-mono text-slate-500">
+                    Palabras redactadas: {respuestaAlumno.trim().split(/\s+/).filter(w => w.length > 0).length}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* ETAPA 3: DICTAMEN DE REVISIÓN E IA */}
+            {simuladorStep === 'revision' && (
+              <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-8 flex flex-col items-center overflow-y-auto">
+                
+                <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-4">
+                  <Sparkles size={32} />
+                </div>
+                
+                <h2 className="text-2xl font-serif font-bold text-slate-900 mb-1">Dictamen de Evaluación PEvAU</h2>
+                <p className="text-xs text-slate-500 mb-6">Calificación Algorítmica + Modelo Transversal de Excelencia</p>
+
+                {/* NOTA NUMÉRICA FINAL */}
+                <div className="bg-slate-900 text-white rounded-2xl px-10 py-6 text-center mb-8 shadow-xl">
+                  <span className="text-xs uppercase font-mono text-slate-400 block mb-1">Calificación Estimada</span>
+                  <span className="text-5xl font-extrabold text-amber-400 font-serif">{notaFinal.toFixed(2)}</span>
+                  <span className="text-sm font-bold text-slate-400"> / 10.00</span>
+                  {notaFinal === 0.0 && (
+                    <p className="text-rose-400 text-xs mt-2 font-serif">
+                      * Calificación 0.0 asignada obligatoriamente por respuesta vacía o inferior a 20 palabras.
+                    </p>
+                  )}
+                </div>
+
+                {/* MODELO IDEAL 10/10 */}
+                <div className="w-full max-w-4xl bg-slate-50 border border-slate-200 rounded-2xl p-6 text-left">
+                  <h3 className="font-bold text-slate-900 font-serif text-base mb-4 border-b pb-2 flex items-center gap-2">
+                    <CheckCircle size={18} className="text-emerald-600" />
+                    <span>Modelo de Respuesta 10/10 y Análisis Transversal</span>
+                  </h3>
+                  <div className="whitespace-pre-line font-serif text-slate-700 text-sm leading-relaxed bg-white p-6 rounded-xl border border-slate-200">
+                    {examenSeleccionado?.idealIA}
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setSimuladorStep('seleccion')}
+                  className="mt-8 px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow transition"
+                >
+                  Realizar Otro Simulacro
+                </button>
+
+              </div>
+            )}
+
+          </div>
+        )}
+
+      </main>
+
+      {/* FOOTER OFICIAL DE AUTORÍA */}
+      <footer className="bg-slate-950 text-slate-500 text-xs py-6 border-t border-slate-900 text-center">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+          <p className="font-bold text-slate-300">© Francisco Prados | Plataforma PEvAU</p>
+          <p className="text-[11px]">Historia de la Filosofía • Bachillerato & Preparación Universitaria</p>
+        </div>
+      </footer>
+
+    </div>
+  );
+}
